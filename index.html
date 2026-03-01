@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>UES War Map</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+body {
+    margin: 0;
+    background: #111;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+#map {
+    height: 100vh;
+    width: 100vw;
+}
+.leaflet-control-layers {
+    background: #222;
+    color: white;
+}
+.popup-content {
+    color: black;
+}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+const map = L.map('map').setView([39, -95], 4);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'UES Strategic Command'
+}).addTo(map);
+
+function getColor(faction) {
+    return faction === "UES" ? "#6A8C6D" :
+           faction === "NATO" ? "#2C4DA7" :
+           faction === "CLF" ? "#777777" :
+           faction === "REDS" ? "#CC0000" :
+           "#555555";
+}
+
+let stateLayer = L.layerGroup().addTo(map);
+let battleLayer = L.layerGroup().addTo(map);
+let frontlineLayer = L.layerGroup().addTo(map);
+let countyLayer = L.layerGroup();
+
+
+// Load States
+fetch('data/states.json')
+.then(res => res.json())
+.then(data => {
+    L.geoJSON(data, {
+        style: function(feature) {
+            return {
+                fillColor: getColor(feature.properties.faction),
+                weight: 1,
+                opacity: 1,
+                color: '#000',
+                fillOpacity: 0.6
+            };
+        },
+        onEachFeature: function(feature, layer) {
+            layer.bindPopup(
+                "<b>" + feature.properties.name + "</b><br>" +
+                "Control: " + feature.properties.faction
+            );
+        }
+    }).addTo(stateLayer);
+});
+
+// Load Battles
+fetch('data/battles.json')
+.then(res => res.json())
+.then(data => {
+    data.forEach(battle => {
+        L.circleMarker([battle.lat, battle.lng], {
+            radius: 8,
+            color: "#fff",
+            fillColor: getColor(battle.faction),
+            fillOpacity: 0.9
+        }).bindPopup(
+            "<b>" + battle.name + "</b><br>" +
+            "Status: " + battle.status + "<br>" +
+            "Faction: " + battle.faction
+        ).addTo(battleLayer);
+    });
+});
+
+// Load Frontlines
+fetch('data/frontlines.json')
+.then(res => res.json())
+.then(data => {
+    data.forEach(line => {
+        L.polyline(line.coordinates, {
+            color: "#ffffff",
+            dashArray: '6,6',
+            weight: 2
+        }).addTo(frontlineLayer);
+    });
+});
+
+// Toggle counties when zoomed
+map.on('zoomend', function() {
+    if (map.getZoom() > 6) {
+        if (!map.hasLayer(countyLayer)) {
+            countyLayer.addTo(map);
+        }
+    } else {
+        if (map.hasLayer(countyLayer)) {
+            map.removeLayer(countyLayer);
+        }
+    }
+});
+
+// Layer controls
+L.control.layers(null, {
+    "States": stateLayer,
+    "Battles": battleLayer,
+    "Frontlines": frontlineLayer
+}).addTo(map);
+
+</script>
+</body>
+</html>

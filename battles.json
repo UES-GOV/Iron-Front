@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Battle of Dallas",
+    "lat": 32.7767,
+    "lng": -96.7970,
+    "status": "Ongoing",
+    "faction": "NATO"
+  },
+  {
+    "name": "Siege of Atlanta",
+    "lat": 33.7490,
+    "lng": -84.3880,
+    "status": "UES Offensive",
+    "faction": "UES"
+  }
+]
